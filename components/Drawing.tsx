@@ -5,19 +5,12 @@ import React from "react";
 //import p5 from "../pages/p5";
 
 
-function P5JsComponent({ page }: { page: number }) {
+function P5JsComponent({ page, pages }: { page: number, pages: any }) {
     const width = 960;
     const height = 580;
-    const [pages, setPages] = useState<Array<SketchPage>>([]);
     const [newPage, setNewPage] = useState(false);
 
     useEffect(() => {
-        if (!pages[page]) {
-            setPages(oldArray => [...oldArray, {
-                page: page,
-                contentLines: []
-            }]);
-        }
         console.log("User changed page")
         setNewPage(true);
     }, [page])
