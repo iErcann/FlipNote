@@ -1,17 +1,16 @@
 import Sketch from "react-p5";
 import p5Types from "p5";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import React from "react";
 //import p5 from "../pages/p5";
-
-type InputParameterType = {};
 
 
 function P5JsComponent({ page }: { page: number }) {
     const width = 960;
     const height = 580;
     const [pages, setPages] = useState<Array<SketchPage>>([]);
-    let newPage = false;
+    const [newPage, setNewPage] = useState(false);
+
     useEffect(() => {
         if (!pages[page]) {
             setPages(oldArray => [...oldArray, {
@@ -20,7 +19,7 @@ function P5JsComponent({ page }: { page: number }) {
             }]);
         }
         console.log("User changed page")
-        newPage = true;
+        setNewPage(true);
     }, [page])
 
     //See annotations in JS for more information
@@ -61,7 +60,7 @@ function P5JsComponent({ page }: { page: number }) {
             for (let i = 0; i < lines.length; i++) {
                 p5.line(lines[i].x1, lines[i].y1, lines[i].x2, lines[i].y2);
             }
-            newPage = false;
+            setNewPage(false);
         }
         if (p5.mouseIsPressed) {
             p5.strokeWeight(5);
