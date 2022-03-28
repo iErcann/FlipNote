@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import React from "react";
 //import p5 from "../pages/p5";
 
+function addAlpha(color: string, opacity: number): string {
+    // coerce values so ti is between 0 and 1.
+    const _opacity = Math.round(Math.min(Math.max(opacity || 1, 0), 1) * 255);
+    return color + _opacity.toString(16).toUpperCase();
+}
 
 function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: any, drawingSettings: React.MutableRefObject<DrawingSettings> }) {
     const width = 960;
@@ -30,11 +35,21 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         p5.stroke(0);
     }
 
-    const drawPage = (p5: p5Types, sketchPage: SketchPage) => {
+    const strokeLine = (p5: p5Types, line: LineInfo) => {
+        p5.strokeWeight(line.brushSize);
+        p5.stroke(line.brushColor);
+    }
+    const drawLine = (p5: p5Types, line: LineInfo) => {
+        p5.line(line.x1, line.y1, line.x2, line.y2);
+    }
+    const drawPage = (p5: p5Types, sketchPage: SketchPage, opacity: number) => {
         const lines = sketchPage.contentLines
         for (let i = 0; i < lines.length; i++) {
-            p5.strokeWeight(lines[i].brushSize);
-            p5.line(lines[i].x1, lines[i].y1, lines[i].x2, lines[i].y2);
+            strokeLine(p5, lines[i]);
+            if (opacity > 0) {
+                p5.stroke(addAlpha(lines[i].brushColor, opacity));
+            }
+            drawLine(p5, lines[i]);
         }
     }
     //See annotations in JS for more information
@@ -48,20 +63,28 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         if (newPage) {
             initSketch(p5);
             // Set page content
-            drawPage(p5, pages[page]);
+            drawPage(p5, pages[page], 0);
+            // Draw previous page with low opacity            
             if (page > 0 && !drawingSettings.current.hidePreviousPage) {
                 p5.push();
                 p5.stroke(0, 50);
-                drawPage(p5, pages[page - 1]);
+                drawPage(p5, pages[page - 1], .1);
                 p5.pop();
             }
             setNewPage(false);
         }
+
+        if (p5.keyIsDown(p5.LEFT_ARROW)) {
+            lines.pop();
+            setNewPage(true);
+        }
+
         if (p5.mouseIsPressed) {
-            const brushSize = drawingSettings.current.brushSize;
-            p5.strokeWeight(brushSize);
-            p5.line(p5.mouseX, p5.mouseY, p5.pmouseX, p5.pmouseY);
-            lines.push({ x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize })
+            const { brushSize, brushColor } = drawingSettings.current;
+            const line: LineInfo = { x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor };
+            strokeLine(p5, line);
+            drawLine(p5, line);
+            lines.push(line);
         }
     };
     return <Sketch setup={setup} draw={draw} />;

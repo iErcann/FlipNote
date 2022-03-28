@@ -4,7 +4,7 @@ interface LineInfo {
     y1: number;
     y2: number;
     brushSize: number;
-
+    brushColor: string; // hex
 }
 
 interface SketchPage {
@@ -16,5 +16,6 @@ interface SketchPage {
 
 interface DrawingSettings {
     brushSize: number;
+    brushColor: string; // hex
     hidePreviousPage: boolean;
 }

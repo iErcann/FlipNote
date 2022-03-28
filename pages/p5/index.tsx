@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Sketch from 'react-p5'
 import dynamic from 'next/dynamic'
-import { NumberInputField, NumberInput, NumberDecrementStepper, NumberInputStepper, NumberIncrementStepper, Box, Button, Center, Flex, HStack, Slider, SliderFilledTrack, SliderMark, SliderThumb, SliderTrack, Stack, Text, useBreakpointValue, PopoverTrigger, PopoverContent, PopoverCloseButton, PopoverHeader, PopoverFooter, PopoverBody, PopoverArrow, Portal, Popover, Switch, FormControl, FormLabel, SimpleGrid, RangeSlider, RangeSliderTrack, RangeSliderFilledTrack, RangeSliderThumb } from '@chakra-ui/react'
-import { MdBuild, MdCall, MdArrowRight, MdStop, MdDraw, MdSettings } from "react-icons/md"
+import { NumberInputField, NumberInput, NumberDecrementStepper, NumberInputStepper, NumberIncrementStepper, Box, Button, Center, Flex, HStack, Slider, SliderFilledTrack, SliderMark, SliderThumb, SliderTrack, Stack, Text, useBreakpointValue, PopoverTrigger, PopoverContent, PopoverCloseButton, PopoverHeader, PopoverFooter, PopoverBody, PopoverArrow, Portal, Popover, Switch, FormControl, FormLabel, SimpleGrid, RangeSlider, RangeSliderTrack, RangeSliderFilledTrack, RangeSliderThumb, Input, Icon } from '@chakra-ui/react'
+import { MdBuild, MdCall, MdArrowRight, MdStop, MdDraw, MdSettings, MdBorderColor, MdColorLens } from "react-icons/md"
 import Draggable from 'react-draggable';
+import { SketchPicker } from 'react-color'
 
 const P5JsComponent = dynamic(
   () => import("../../components/Drawing"),
@@ -43,10 +44,11 @@ function Settings({ drawingSettings, fps }: {
 }
 function DrawingTools({ drawingSettings }: { drawingSettings: React.MutableRefObject<DrawingSettings>, }) {
   const [sliderValue, setSliderValue] = React.useState(1)
+
   return <>
     <Popover onClose={() => { drawingSettings.current.brushSize = sliderValue }}>
       <PopoverTrigger>
-        <Button>Brush Size</Button>
+        <Button leftIcon={<MdBorderColor />} colorScheme='teal' variant='outline'>Brush Size</Button>
       </PopoverTrigger>
       <PopoverContent>
         <PopoverArrow />
@@ -66,6 +68,8 @@ function DrawingTools({ drawingSettings }: { drawingSettings: React.MutableRefOb
         </PopoverBody>
       </PopoverContent>
     </Popover>
+    <Input w={20} type="color" defaultValue={"#FFFAEA"} onChange={(evt: any) => drawingSettings.current.brushColor = evt.target.value} />
+
   </>
 }
 function FPSInput({ fps }: {
@@ -118,10 +122,9 @@ export default function App() {
   const [page, setPage] = useState(0);
   const [playInterval, setPlayInterval] = useState<any>();
   const currentFps = useRef(24);
-  const drawingSettings = useRef<DrawingSettings>({ brushSize: 1, hidePreviousPage: false });
+  const drawingSettings = useRef<DrawingSettings>({ brushSize: 1, hidePreviousPage: false, brushColor: "#000000" });
   const [pages, setPages] = useState<Array<SketchPage>>([]);
-
-  useEffect(() => {
+   useEffect(() => {
     setPages(oldArray => [...oldArray, {
       page: page,
       contentLines: []
@@ -131,6 +134,7 @@ export default function App() {
   const play = () => {
     drawingSettings.current.hidePreviousPage = true;
     const interval = setInterval(() => {
+      console.log(pages)
       setPage(page => (page + 1) % pages.length)
       console.log(page, pages.length);
     }, 1000 / currentFps.current)
@@ -161,9 +165,11 @@ export default function App() {
     <Flex justify={vrtcl} >
       <Box
         boxShadow={"lg"} m={4} id="content"   >
+        <HStack mb={4}>
+          <DrawingTools drawingSettings={drawingSettings} />
+        </HStack>
         <P5JsComponent page={page} pages={pages} drawingSettings={drawingSettings} />
         <Flex mt={2} justify="center">
-          <DrawingTools drawingSettings={drawingSettings} />
           <HStack>
             <Button colorScheme='orange' onClick={duplicateCurrentPage}  >
               Duplicate
@@ -190,7 +196,6 @@ export default function App() {
             console.log(p);
             return (
               <Flex direction={"column"} ml={2} key={i}>
-
                 <Button boxSize={12} bg={p.page === page ? "orange" : "blue.300"} onClick={() => setPage(i)}>
                   Page {p.page}
                 </Button>
