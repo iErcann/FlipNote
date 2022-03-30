@@ -57,9 +57,21 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         p5.createCanvas(width, height).parent(canvasParentRef);
         initSketch(p5);
     };
+
+    function mouseDragged(p5: p5Types) {
+        if (!pages[page]) return;
+        const lines = pages[page].contentLines;
+        const { brushSize, brushColor } = drawingSettings.current;
+        const line: LineInfo = { x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor };
+        strokeLine(p5, line);
+        drawLine(p5, line);
+        lines.push(line);
+
+    }
     const draw = (p5: p5Types) => {
         if (!pages[page]) return;
-        const lines = pages[page].contentLines
+        const lines = pages[page].contentLines;
+
         if (newPage) {
             initSketch(p5);
             // Set page content
@@ -79,15 +91,10 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             setNewPage(true);
         }
 
-        if (p5.mouseIsPressed) {
-            const { brushSize, brushColor } = drawingSettings.current;
-            const line: LineInfo = { x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor };
-            strokeLine(p5, line);
-            drawLine(p5, line);
-            lines.push(line);
-        }
+
+
     };
-    return <Sketch setup={setup} draw={draw} />;
+    return <Sketch setup={setup} draw={draw} mouseDragged={mouseDragged} />;
 }
 
 export default P5JsComponent;
