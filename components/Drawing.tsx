@@ -84,16 +84,8 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             if (clickedPoints.length > 2) { clickedPoints = [] }
             clickedPoints.push({ x: x, y: y });
             if (clickedPoints.length === 2) {
-                console.log(clickedPoints);
-                const lines = pages[page].contentLines;
-                for (let i = lines.length - 1; i >= 0; i--) {
-                    const line: LineInfo = lines[i];
-                    if (line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x) {
-                        if (line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y) {
-                            lines.splice(i, 1);
-                        }
-                    }
-                }
+                let lines = pages[page].contentLines;
+                pages[page].contentLines = lines.filter((line: LineInfo) => !(line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x && line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y))
                 setNewPage(true);
             }
         }

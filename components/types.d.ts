@@ -5,6 +5,7 @@
     y2: number;
     brushSize: number;
     brushColor: string; // hex
+    isSelected: boolean;
 }
 interface PointInfo {
     x: number;
