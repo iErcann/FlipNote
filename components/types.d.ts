@@ -6,13 +6,14 @@
     brushSize: number;
     brushColor: string; // hex
 }
-
- interface SketchPage {
+interface PointInfo {
+    x: number;
+    y: number;
+}
+interface SketchPage {
     page: number;
     contentLines: Array<LineInfo>
 }
-
-
   
 interface DrawingSettings {
     state: DrawingState;

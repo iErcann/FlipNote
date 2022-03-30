@@ -2,6 +2,7 @@ import Sketch from "react-p5";
 import p5Types from "p5";
 import { useEffect, useRef, useState } from "react";
 import React from "react";
+import { DrawingState } from "../pages/p5";
 //import p5 from "../pages/p5";
 
 function addAlpha(color: string, opacity: number): string {
@@ -14,7 +15,7 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
     const width = 960;
     const height = 580;
     const [newPage, setNewPage] = useState(false);
-
+    let clickedPoints: Array<PointInfo> = [];
     useEffect(() => {
         console.log("User changed page")
         setNewPage(true);
@@ -60,18 +61,42 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
 
     let last = Date.now();
     function mouseDragged(p5: p5Types) {
-        if (!pages[page]) return;
-        const now = Date.now();
-        //if (now-last < 1000/16) return;
-        // TODO: Dotted tool here with x and y modulo
-        const lines = pages[page].contentLines;
-        const { brushSize, brushColor } = drawingSettings;
-        const line: LineInfo = { x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor };
-        strokeLine(p5, line);
-        drawLine(p5, line);
-        lines.push(line);
-        last = now;
+        // This is even worse since its independent from the p5 loop
+        /*         if (!pages[page]) return;
+                const now = Date.now();
+                //if (now-last < 1000/16) return;
+                // TODO: Dotted tool here with x and y modulo
+                const lines = pages[page].contentLines;
+                const { brushSize, brushColor } = drawingSettings;
+                const line: LineInfo = { x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor };
+                strokeLine(p5, line);
+                drawLine(p5, line);
+                lines.push(line);
+                last = now; */
 
+    }
+
+    function mouseClicked(p5: p5Types) {
+        const x = p5.mouseX;
+        const y = p5.mouseY;
+        if (x < 0 || x > width || y < 0 || y > height) return;
+        if (drawingSettings.state === DrawingState.SELECTION) {
+            if (clickedPoints.length > 2) { clickedPoints = [] }
+            clickedPoints.push({ x: x, y: y });
+            if (clickedPoints.length === 2) {
+                console.log(clickedPoints);
+                const lines = pages[page].contentLines;
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line: LineInfo = lines[i];
+                    if (line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x) {
+                        if (line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y) {
+                            lines.splice(i, 1);
+                        }
+                    }
+                }
+                setNewPage(true);
+            }
+        }
     }
     const draw = (p5: p5Types) => {
         if (!pages[page]) return;
@@ -96,10 +121,20 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             setNewPage(true);
         }
 
+        if (drawingSettings.state === DrawingState.BRUSH && p5.mouseIsPressed) {
+            const lines = pages[page].contentLines;
+            const { brushSize, brushColor } = drawingSettings;
+            const line: LineInfo = { x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor };
+            strokeLine(p5, line);
+            drawLine(p5, line);
+            lines.push(line);
+        }
+
+
 
 
     };
-    return <Sketch setup={setup} draw={draw} mouseDragged={mouseDragged} />;
+    return <Sketch setup={setup} draw={draw} mouseDragged={mouseDragged} mouseClicked={mouseClicked} />;
 }
 
 export default P5JsComponent;
