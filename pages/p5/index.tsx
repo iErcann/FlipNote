@@ -18,7 +18,7 @@ const P5JsComponent = dynamic(
 
 
 function Settings({ drawingSettings, fps }: {
-  drawingSettings: React.MutableRefObject<DrawingSettings>, fps: React.MutableRefObject<number>
+  drawingSettings:  DrawingSettings, fps: React.MutableRefObject<number>
 }) {
   return <>
     <Popover>
@@ -39,7 +39,7 @@ function Settings({ drawingSettings, fps }: {
             <FormLabel htmlFor='hideF' mb='0'>
               Hide previous frame
             </FormLabel>
-            <Switch id='hideF' onChange={() => drawingSettings.current.hidePreviousPage = !drawingSettings.current.hidePreviousPage} />
+            <Switch id='hideF' onChange={() => drawingSettings.hidePreviousPage = !drawingSettings.hidePreviousPage} />
           </FormControl>
 
         </PopoverBody>
@@ -47,11 +47,11 @@ function Settings({ drawingSettings, fps }: {
     </Popover>
   </>
 }
-function DrawingTools({ drawingSettings }: { drawingSettings: React.MutableRefObject<DrawingSettings>, }) {
+function DrawingTools({ drawingSettings }: { drawingSettings: DrawingSettings, }) {
   const [sliderValue, setSliderValue] = React.useState(1)
 
   const setDrawingState = (state: DrawingState) => {
-    drawingSettings.current.state = state;
+    drawingSettings.state = state;
     console.log(state);
   }
   return <>
@@ -59,7 +59,7 @@ function DrawingTools({ drawingSettings }: { drawingSettings: React.MutableRefOb
     <Button leftIcon={<MdHighlightAlt />} variant='outline' onClick={() => setDrawingState(DrawingState.SELECTION)}> Select </Button>
     <Spacer></Spacer>
 
-    <Popover onClose={() => { drawingSettings.current.brushSize = sliderValue }}>
+    <Popover onClose={() => { drawingSettings.brushSize = sliderValue }}>
       <PopoverTrigger>
         <Button leftIcon={<MdBorderColor />} colorScheme='teal' variant='outline'>Brush Size</Button>
       </PopoverTrigger>
@@ -81,7 +81,7 @@ function DrawingTools({ drawingSettings }: { drawingSettings: React.MutableRefOb
         </PopoverBody>
       </PopoverContent>
     </Popover>
-    <Input w={20} type="color" defaultValue={"#FFFAEA"} onChange={(evt: any) => drawingSettings.current.brushColor = evt.target.value} />
+    <Input w={20} type="color" defaultValue={"#FFFAEA"} onChange={(evt: any) => drawingSettings.brushColor = evt.target.value} />
   </>
 }
 function FPSInput({ fps }: {
@@ -134,7 +134,7 @@ export default function App() {
   const [page, setPage] = useState(0);
   const [playInterval, setPlayInterval] = useState<any>();
   const currentFps = useRef(24);
-  const drawingSettings = useRef<DrawingSettings>({ brushSize: 1, hidePreviousPage: false, brushColor: "#000000", state: DrawingState.BRUSH });
+  const [drawingSettings, setDrawingSettings] = useState<DrawingSettings>({ brushSize: 5, hidePreviousPage: false, brushColor: "#000000", state: DrawingState.BRUSH })
   const [pages, setPages] = useState<Array<SketchPage>>([]);
   useEffect(() => {
     setPages(oldArray => [...oldArray, {
@@ -144,7 +144,7 @@ export default function App() {
   }, [])
 
   const play = () => {
-    drawingSettings.current.hidePreviousPage = true;
+    drawingSettings.hidePreviousPage = true;
     const interval = setInterval(() => {
       console.log(pages)
       setPage(page => (page + 1) % pages.length)
@@ -156,7 +156,7 @@ export default function App() {
 
   const stop = () => {
     clearInterval(playInterval);
-    drawingSettings.current.hidePreviousPage = false;
+    drawingSettings.hidePreviousPage = false;
 
   }
 
@@ -204,7 +204,7 @@ export default function App() {
               <Text>
                 Number of lines: {pages[page].contentLines.length}
                 -
-                State: {drawingSettings.current.state}
+                State: {drawingSettings.state}
               </Text>
             ) : null}
           </HStack>

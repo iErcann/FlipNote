@@ -10,7 +10,7 @@ function addAlpha(color: string, opacity: number): string {
     return color + _opacity.toString(16).toUpperCase();
 }
 
-function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: any, drawingSettings: React.MutableRefObject<DrawingSettings> }) {
+function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: any, drawingSettings: DrawingSettings }) {
     const width = 960;
     const height = 580;
     const [newPage, setNewPage] = useState(false);
@@ -58,14 +58,19 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         initSketch(p5);
     };
 
+    let last = Date.now();
     function mouseDragged(p5: p5Types) {
         if (!pages[page]) return;
+        const now = Date.now();
+        //if (now-last < 1000/16) return;
+        // TODO: Dotted tool here with x and y modulo
         const lines = pages[page].contentLines;
-        const { brushSize, brushColor } = drawingSettings.current;
+        const { brushSize, brushColor } = drawingSettings;
         const line: LineInfo = { x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor };
         strokeLine(p5, line);
         drawLine(p5, line);
         lines.push(line);
+        last = now;
 
     }
     const draw = (p5: p5Types) => {
@@ -77,7 +82,7 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             // Set page content
             drawPage(p5, pages[page], 0);
             // Draw previous page with low opacity            
-            if (page > 0 && !drawingSettings.current.hidePreviousPage) {
+            if (page > 0 && !drawingSettings.hidePreviousPage) {
                 p5.push();
                 p5.stroke(0, 50);
                 drawPage(p5, pages[page - 1], .1);

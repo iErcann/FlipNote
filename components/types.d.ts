@@ -13,10 +13,7 @@
 }
 
 
- enum DrawingState {
-    BRUSH,
-    SELECTION
-}
+  
 interface DrawingSettings {
     state: DrawingState;
     brushSize: number;
