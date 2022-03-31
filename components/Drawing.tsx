@@ -16,6 +16,8 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
     const height = 580;
     const [newPage, setNewPage] = useState(false);
     let clickedPoints: Array<PointInfo> = [];
+    const [clickedPoints_, setClickedPoints] = useState<Array<PointInfo>>([]);
+
     useEffect(() => {
         console.log("User changed page")
         setNewPage(true);
@@ -36,9 +38,9 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         p5.stroke(0);
     }
 
-    const strokeLine = (p5: p5Types, line: LineInfo) => {
-        p5.strokeWeight(line.brushSize);
-        p5.stroke(line.brushColor);
+    const strokeApply = (p5: p5Types, style: Styling) => {
+        p5.strokeWeight(style.brushSize);
+        p5.stroke(style.brushColor);
     }
     const drawLine = (p5: p5Types, line: LineInfo) => {
         p5.line(line.x1, line.y1, line.x2, line.y2);
@@ -54,17 +56,16 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
                 } */
 
         const vertices = sketchPage.contentVertices;
-        console.log(vertices)
         for (let i = 0; i < vertices.length; i++) {
-            const vertex : VertexInfo = vertices[i];
+            const vertex: VertexInfo = vertices[i];
             // add styling here
             // Looping over all vertex points
             p5.beginShape();
-
+            p5.noFill();
+            strokeApply(p5, vertex.styling);
             for (let j = 0; j < vertex.content.length; j++) {
                 const point: PointInfo = vertex.content[j];
                 p5.vertex(point.x, point.y);
-
             }
             p5.endShape();
 
@@ -98,33 +99,36 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         const y = p5.mouseY;
         if (x < 0 || x > width || y < 0 || y > height) return;
         if (drawingSettings.state === DrawingState.SELECTION) {
-            if (clickedPoints.length > 2) { clickedPoints = [] }
-            clickedPoints.push({ x: x, y: y });
-            if (clickedPoints.length === 2) {
-                let lines = pages[page].contentLines;
-                for (let i = 0; i < lines.length; i++) {
-                    const line: LineInfo = lines[i];
-                    if (line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x && line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y) {
-                        line.brushColor = "red"
-                        line.isSelected = true;
-                    }
-                }
-                //const selectedLines = lines.filter((line: LineInfo) => (line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x && line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y))
-
-                //pages[page].contentLines = lines.filter((line: LineInfo) => !(line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x && line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y))
+            if (clickedPoints_.length > 2) {
+                setClickedPoints([]);
+            }
+            clickedPoints_.push({ x: x, y: y });
+            console.log(clickedPoints_)
+            if (clickedPoints_.length === 2) {
+                let vertices = pages[page].contentVertices;
+                /*     for (let i = 0; i < vertices.length; i++) {
+                        const vertex: VertexInfo = vertices[i];
+                        const firstPoint: PointInfo = vertex.content[0];
+                        firstPoint.x += vertex.posOffset.x;
+                        firstPoint.y += vertex.posOffset.y;
+                        console.log("ok");
+                        if (firstPoint.x > clickedPoints_[0].x && firstPoint.x < clickedPoints_[1].x && firstPoint.y > clickedPoints_[0].y && firstPoint.y < clickedPoints_[1].y) {
+                            vertex.styling.brushColor = "red"
+                            vertex.isSelected = true;
+                        }
+                    } */
                 setNewPage(true);
             }
         }
+
     }
     function moveSelectedContent(deltaX: number, deltaY: number) {
-        let lines = pages[page].contentLines;
-        for (let i = 0; i < lines.length; i++) {
-            const line: LineInfo = lines[i];
-            if (line.isSelected) {
-                line.x1 += deltaX;
-                line.x2 += deltaX;
-                line.y1 += deltaY;
-                line.y2 += deltaY;
+        let vertices = pages[page].contentVertices;
+        for (let i = 0; i < vertices.length; i++) {
+            const vertex: VertexInfo = vertices[i];
+            if (vertex.isSelected) {
+                vertex.posOffset.x += deltaX;
+                vertex.posOffset.y += deltaY;
             }
         }
 
@@ -135,10 +139,16 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         styling: {
             brushColor: "#000000",
             brushSize: 10
+        },
+        isSelected: false,
+        posOffset: {
+            x: 0,
+            y: 0
         }
     };
-    function mouseReleased(p5: p5Types) {
-        if (!pages[page]) return;
+
+    function endCurrentVertex() {
+        if (currentVertexPath.content.length == 0) return;
         pages[page].contentVertices.push(currentVertexPath);
 
         currentVertexPath = {
@@ -146,15 +156,32 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             styling: {
                 brushColor: "#000000",
                 brushSize: 10
+            },
+            isSelected: false,
+            posOffset: {
+                x: 0,
+                y: 0
             }
         };
+
+
+    }
+    function mouseReleased(p5: p5Types) {
+        if (!pages[page]) return;
+        /*         for (let i = currentVertexPath.content.length - 1; i >= 0; i--) {
+                    if (i % 2 == 0) {
+                        currentVertexPath.content.splice(i, 1);
+                    }
+                } */
+        endCurrentVertex();
         setNewPage(true);
     }
     const draw = (p5: p5Types) => {
         if (!pages[page]) return;
-        const lines = pages[page].contentLines;
 
         if (newPage) {
+            endCurrentVertex();
+
             initSketch(p5);
             // Set page content
             drawPage(p5, pages[page], 0);
@@ -190,15 +217,16 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         }
 
         if (drawingSettings.state === DrawingState.BRUSH && p5.mouseIsPressed) {
-            const lines = pages[page].contentLines;
             const { brushSize, brushColor } = drawingSettings;
             const line: LineInfo = {
-                x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor,
-                isSelected: false
+                x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY,
+                isSelected: false, styling: {
+                    brushSize: brushSize, brushColor: brushColor,
+                }
             };
-            strokeLine(p5, line);
+            strokeApply(p5, line.styling);
             drawLine(p5, line);
-            lines.push(line);
+            currentVertexPath.styling = line.styling;
             currentVertexPath.content.push({
                 x: p5.mouseX,
                 y: p5.mouseY,

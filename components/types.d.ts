@@ -3,8 +3,7 @@
     x2: number;
     y1: number;
     y2: number;
-    brushSize: number;
-    brushColor: string; // hex
+    styling: Styling;
     isSelected: boolean;
 }
 interface PointInfo {
@@ -20,6 +19,9 @@ interface Styling {
 interface VertexInfo {
     content: Array<PointInfo>;
     styling: Styling;
+    isSelected: boolean;
+    posOffset: PointInfo;
+
 }
 interface SketchPage {
     page: number;
