@@ -11,9 +11,21 @@ interface PointInfo {
     x: number;
     y: number;
 }
+
+interface Styling {
+    brushSize: number;
+    brushColor: string; // hex
+}
+
+interface VertexInfo {
+    content: Array<PointInfo>;
+    styling: Styling;
+}
 interface SketchPage {
     page: number;
-    contentLines: Array<LineInfo>
+    contentLines: Array<LineInfo>;
+    contentVertices: Array<VertexInfo>;
+
 }
   
 interface DrawingSettings {

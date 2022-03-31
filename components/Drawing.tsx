@@ -85,11 +85,34 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             clickedPoints.push({ x: x, y: y });
             if (clickedPoints.length === 2) {
                 let lines = pages[page].contentLines;
-                pages[page].contentLines = lines.filter((line: LineInfo) => !(line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x && line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y))
+                for (let i = 0; i < lines.length; i++) {
+                    const line: LineInfo = lines[i];
+                    if (line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x && line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y) {
+                        line.brushColor = "red"
+                        line.isSelected = true;
+                    }
+                }
+                //const selectedLines = lines.filter((line: LineInfo) => (line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x && line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y))
+
+                //pages[page].contentLines = lines.filter((line: LineInfo) => !(line.x1 > clickedPoints[0].x && line.x1 < clickedPoints[1].x && line.y1 > clickedPoints[0].y && line.y1 < clickedPoints[1].y))
                 setNewPage(true);
             }
         }
     }
+    function moveSelectedContent(deltaX: number, deltaY: number) {
+        let lines = pages[page].contentLines;
+        for (let i = 0; i < lines.length; i++) {
+            const line: LineInfo = lines[i];
+            if (line.isSelected) {
+                line.x1 += deltaX;
+                line.x2 += deltaX;
+                line.y1 += deltaY;
+                line.y2 += deltaY;
+            }
+        }
+
+    }
+    const currentVertexPath : VertexInfo = [];
     const draw = (p5: p5Types) => {
         if (!pages[page]) return;
         const lines = pages[page].contentLines;
@@ -107,24 +130,43 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             }
             setNewPage(false);
         }
-
+        /* 
+                if (p5.keyIsDown(p5.DOWN_ARROW)) {
+                    lines.pop();
+                    setNewPage(true);
+                } */
         if (p5.keyIsDown(p5.LEFT_ARROW)) {
-            lines.pop();
+            moveSelectedContent(-5, 0);
+            setNewPage(true);
+        }
+        if (p5.keyIsDown(p5.RIGHT_ARROW)) {
+            moveSelectedContent(5, 0);
+            setNewPage(true);
+        }
+        if (p5.keyIsDown(p5.UP_ARROW)) {
+            moveSelectedContent(0, -5);
+            setNewPage(true);
+        }
+        if (p5.keyIsDown(p5.DOWN_ARROW)) {
+            moveSelectedContent(0, 5);
             setNewPage(true);
         }
 
-        if (drawingSettings.state === DrawingState.BRUSH && p5.mouseIsPressed) {
+        if (drawingSettings.state === DrawingState.BRUSH && p5.mouseIsPressed  ) {
             const lines = pages[page].contentLines;
             const { brushSize, brushColor } = drawingSettings;
-            const line: LineInfo = { x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor };
+            const line: LineInfo = {
+                x1: p5.mouseX, y1: p5.mouseY, x2: p5.pmouseX, y2: p5.pmouseY, brushSize: brushSize, brushColor: brushColor,
+                isSelected: false
+            };
             strokeLine(p5, line);
             drawLine(p5, line);
             lines.push(line);
+            /* currentVertexPath.push({
+
+            })
+             */
         }
-
-
-
-
     };
     return <Sketch setup={setup} draw={draw} mouseDragged={mouseDragged} mouseClicked={mouseClicked} />;
 }

@@ -139,7 +139,8 @@ export default function App() {
   useEffect(() => {
     setPages(oldArray => [...oldArray, {
       page: page,
-      contentLines: []
+      contentLines: [],
+      contentVertices: []
     }])
   }, [])
 
@@ -167,7 +168,9 @@ export default function App() {
         setPages(oldArray => [...oldArray, {
           page: page + 1,
           // Deep clone of previous page array because we don't want a reference 
-          contentLines: oldArray[page].contentLines.map(a => ({ ...a }))
+          contentLines: oldArray[page].contentLines.map(a => ({ ...a })),
+          contentVertices: oldArray[page].contentVertices.map(a => ({ ...a })),
+          
         }])
         return;
       }
@@ -241,7 +244,8 @@ export default function App() {
           })}
           <Button boxSize={10} bg={"blue.100"} onClick={() => setPages([...pages, {
             page: pages.length,
-            contentLines: []
+            contentLines: [],
+            contentVertices: []
           }])}>
             +
           </Button>
