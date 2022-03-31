@@ -44,13 +44,30 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         p5.line(line.x1, line.y1, line.x2, line.y2);
     }
     const drawPage = (p5: p5Types, sketchPage: SketchPage, opacity: number) => {
-        const lines = sketchPage.contentLines
-        for (let i = 0; i < lines.length; i++) {
-            strokeLine(p5, lines[i]);
-            if (opacity > 0) {
-                p5.stroke(addAlpha(lines[i].brushColor, opacity));
+        /*         const lines = sketchPage.contentLines
+                for (let i = 0; i < lines.length; i++) {
+                    strokeLine(p5, lines[i]);
+                    if (opacity > 0) {
+                        p5.stroke(addAlpha(lines[i].brushColor, opacity));
+                    }
+                    drawLine(p5, lines[i]);
+                } */
+
+        const vertices = sketchPage.contentVertices;
+        console.log(vertices)
+        for (let i = 0; i < vertices.length; i++) {
+            const vertex : VertexInfo = vertices[i];
+            // add styling here
+            // Looping over all vertex points
+            p5.beginShape();
+
+            for (let j = 0; j < vertex.content.length; j++) {
+                const point: PointInfo = vertex.content[j];
+                p5.vertex(point.x, point.y);
+
             }
-            drawLine(p5, lines[i]);
+            p5.endShape();
+
         }
     }
     //See annotations in JS for more information
@@ -112,7 +129,27 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         }
 
     }
-    const currentVertexPath : VertexInfo = [];
+
+    let currentVertexPath: VertexInfo = {
+        content: [],
+        styling: {
+            brushColor: "#000000",
+            brushSize: 10
+        }
+    };
+    function mouseReleased(p5: p5Types) {
+        if (!pages[page]) return;
+        pages[page].contentVertices.push(currentVertexPath);
+
+        currentVertexPath = {
+            content: [],
+            styling: {
+                brushColor: "#000000",
+                brushSize: 10
+            }
+        };
+        setNewPage(true);
+    }
     const draw = (p5: p5Types) => {
         if (!pages[page]) return;
         const lines = pages[page].contentLines;
@@ -152,7 +189,7 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             setNewPage(true);
         }
 
-        if (drawingSettings.state === DrawingState.BRUSH && p5.mouseIsPressed  ) {
+        if (drawingSettings.state === DrawingState.BRUSH && p5.mouseIsPressed) {
             const lines = pages[page].contentLines;
             const { brushSize, brushColor } = drawingSettings;
             const line: LineInfo = {
@@ -162,13 +199,14 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             strokeLine(p5, line);
             drawLine(p5, line);
             lines.push(line);
-            /* currentVertexPath.push({
-
+            currentVertexPath.content.push({
+                x: p5.mouseX,
+                y: p5.mouseY,
             })
-             */
+
         }
     };
-    return <Sketch setup={setup} draw={draw} mouseDragged={mouseDragged} mouseClicked={mouseClicked} />;
+    return <Sketch setup={setup} draw={draw} mouseReleased={mouseReleased} mouseDragged={mouseDragged} mouseClicked={mouseClicked} />;
 }
 
 export default P5JsComponent;
