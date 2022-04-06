@@ -11,15 +11,15 @@ function addAlpha(color: string, opacity: number): string {
     return color + _opacity.toString(16).toUpperCase();
 }
 
-function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: any, drawingSettings: DrawingSettings }) {
+function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: Array<SketchPage>, drawingSettings: DrawingSettings }) {
     const width = 960;
     const height = 580;
     const [newPage, setNewPage] = useState(false);
-    let clickedPoints: Array<PointInfo> = [];
-    const [clickedPoints_, setClickedPoints] = useState<Array<PointInfo>>([]);
+    const clickedPoints = useRef<Array<PointInfo>>([]);
+    const selectedVertices = useRef<Array<VertexInfo>>([]);
 
     useEffect(() => {
-        console.log("User changed page")
+        console.log("New page!")
         setNewPage(true);
     }, [page])
 
@@ -38,9 +38,13 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         p5.stroke(0);
     }
 
-    const strokeApply = (p5: p5Types, style: Styling) => {
+    const strokeApply = (p5: p5Types, style: Styling, opacity: number) => {
         p5.strokeWeight(style.brushSize);
-        p5.stroke(style.brushColor);
+        if (opacity > 0) {
+            p5.stroke(addAlpha(style.brushColor, opacity));
+        } else {
+            p5.stroke(style.brushColor);
+        }
     }
     const drawLine = (p5: p5Types, line: LineInfo) => {
         p5.line(line.x1, line.y1, line.x2, line.y2);
@@ -54,7 +58,7 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
                     }
                     drawLine(p5, lines[i]);
                 } */
-
+        p5.push();
         const vertices = sketchPage.contentVertices;
         for (let i = 0; i < vertices.length; i++) {
             const vertex: VertexInfo = vertices[i];
@@ -62,14 +66,20 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             // Looping over all vertex points
             p5.beginShape();
             p5.noFill();
-            strokeApply(p5, vertex.styling);
+            strokeApply(p5, vertex.styling, opacity);
+            if (vertex.isSelected) {
+                p5.stroke(255, 0, 0);
+                console.log("selected found")
+            }
             for (let j = 0; j < vertex.content.length; j++) {
                 const point: PointInfo = vertex.content[j];
-                p5.vertex(point.x, point.y);
+                p5.vertex(point.x + vertex.posOffset.x, point.y + vertex.posOffset.y);
             }
             p5.endShape();
 
         }
+        p5.pop();
+
     }
     //See annotations in JS for more information
     const setup = (p5: p5Types, canvasParentRef: Element) => {
@@ -99,31 +109,33 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         const y = p5.mouseY;
         if (x < 0 || x > width || y < 0 || y > height) return;
         if (drawingSettings.state === DrawingState.SELECTION) {
-            if (clickedPoints_.length > 2) {
-                setClickedPoints([]);
+            if (clickedPoints.current.length >= 2) {
+                console.log("reset");
+                clickedPoints.current = [];
             }
-            clickedPoints_.push({ x: x, y: y });
-            console.log(clickedPoints_)
-            if (clickedPoints_.length === 2) {
+            clickedPoints.current.push({ x: x, y: y })
+            if (clickedPoints.current.length === 2) {
                 let vertices = pages[page].contentVertices;
-                /*     for (let i = 0; i < vertices.length; i++) {
-                        const vertex: VertexInfo = vertices[i];
-                        const firstPoint: PointInfo = vertex.content[0];
-                        firstPoint.x += vertex.posOffset.x;
-                        firstPoint.y += vertex.posOffset.y;
-                        console.log("ok");
-                        if (firstPoint.x > clickedPoints_[0].x && firstPoint.x < clickedPoints_[1].x && firstPoint.y > clickedPoints_[0].y && firstPoint.y < clickedPoints_[1].y) {
-                            vertex.styling.brushColor = "red"
-                            vertex.isSelected = true;
-                        }
-                    } */
+                for (let i = 0; i < vertices.length; i++) {
+                    const vertex: VertexInfo = vertices[i];
+                    const firstPoint: PointInfo = vertex.content[0];
+                    firstPoint.x += vertex.posOffset.x;
+                    firstPoint.y += vertex.posOffset.y;
+                    console.log("ok");
+                    if (firstPoint.x > clickedPoints.current[0].x && firstPoint.x < clickedPoints.current[1].x && firstPoint.y > clickedPoints.current[0].y && firstPoint.y < clickedPoints.current[1].y) {
+                        vertex.isSelected = true;
+                        selectedVertices.current.push(vertex);
+                        console.log("selected found!");
+                    }
+                }
                 setNewPage(true);
             }
         }
 
     }
     function moveSelectedContent(deltaX: number, deltaY: number) {
-        let vertices = pages[page].contentVertices;
+        const vertices = selectedVertices.current;
+        console.log(vertices);
         for (let i = 0; i < vertices.length; i++) {
             const vertex: VertexInfo = vertices[i];
             if (vertex.isSelected) {
@@ -146,7 +158,6 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
             y: 0
         }
     };
-
     function endCurrentVertex() {
         if (currentVertexPath.content.length == 0) return;
         pages[page].contentVertices.push(currentVertexPath);
@@ -181,16 +192,16 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
 
         if (newPage) {
             endCurrentVertex();
-
+            /*       for (const selectedVertex of selectedVertices.current) {
+                      selectedVertex.isSelected = false;
+                  } */
+            //selectedVertices.current = [];
             initSketch(p5);
             // Set page content
             drawPage(p5, pages[page], 0);
             // Draw previous page with low opacity            
             if (page > 0 && !drawingSettings.hidePreviousPage) {
-                p5.push();
-                p5.stroke(0, 50);
                 drawPage(p5, pages[page - 1], .1);
-                p5.pop();
             }
             setNewPage(false);
         }

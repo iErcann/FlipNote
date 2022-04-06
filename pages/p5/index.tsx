@@ -18,7 +18,7 @@ const P5JsComponent = dynamic(
 
 
 function Settings({ drawingSettings, fps }: {
-  drawingSettings:  DrawingSettings, fps: React.MutableRefObject<number>
+  drawingSettings: DrawingSettings, fps: React.MutableRefObject<number>
 }) {
   return <>
     <Popover>
@@ -52,7 +52,6 @@ function DrawingTools({ drawingSettings }: { drawingSettings: DrawingSettings, }
 
   const setDrawingState = (state: DrawingState) => {
     drawingSettings.state = state;
-    console.log(state);
   }
   return <>
     <Button leftIcon={<MdBorderColor />} variant='outline' onClick={() => setDrawingState(DrawingState.BRUSH)}> Brush</Button>
@@ -87,6 +86,7 @@ function DrawingTools({ drawingSettings }: { drawingSettings: DrawingSettings, }
 function FPSInput({ fps }: {
   fps: React.MutableRefObject<number>
 }) {
+  console.log(fps);
   return (
     <>
       <Text> FPS : </Text>
@@ -143,13 +143,11 @@ export default function App() {
       contentVertices: []
     }])
   }, [])
-
   const play = () => {
+    stop();
     drawingSettings.hidePreviousPage = true;
     const interval = setInterval(() => {
-      console.log(pages)
       setPage(page => (page + 1) % pages.length)
-      console.log(page, pages.length);
     }, 1000 / currentFps.current)
     setPlayInterval(interval);
     return () => clearInterval(interval);
@@ -162,16 +160,23 @@ export default function App() {
   }
 
   const duplicateCurrentPage = () => {
-    // Devrait redécaller tout mais flemme la
     for (let i = 0; i < pages.length; i++) {
-      if (pages[i].page === page) {
-        setPages(oldArray => [...oldArray, {
+      const currentPage: SketchPage = pages[i];
+      if (currentPage.page === page) {
+        const pagesCopy = pages.splice(0);
+        const duplicatedPage: SketchPage = {
           page: page + 1,
-          // Deep clone of previous page array because we don't want a reference 
-          contentLines: oldArray[page].contentLines.map(a => ({ ...a })),
-          contentVertices: oldArray[page].contentVertices.map(a => ({ ...a })),
-          
-        }])
+          contentLines: [], // a delete
+          contentVertices: JSON.parse(JSON.stringify(currentPage.contentVertices)),
+        }
+        // insert at index i+1
+        pagesCopy.splice(i + 1, 0, duplicatedPage);
+        // Increment the right pages
+        for (let j = i + 2; j < pagesCopy.length; j++) {
+          const currentPage: SketchPage = pagesCopy[j];
+          currentPage.page++;
+        }
+        setPages(oldArray => oldArray = pagesCopy);
         return;
       }
     }
@@ -216,11 +221,10 @@ export default function App() {
         <HStack shouldWrapChildren={true} mt={4} wrap={"nowrap"} w={900} overflowX={"scroll"} overflowY={"hidden"}>
 
           {pages.map((p: SketchPage, i: number) => {
-            console.log(p);
             return (
               <Flex direction={"column"} ml={2} key={i}>
                 <Button boxSize={125} bg={p.page === page ? "orange" : "blue.300"} onClick={() => setPage(i)}>
-                  Page {p.page}
+                  Page {p.page} {i}
                 </Button>
                 {/*         <Popover> FAIT RAMER DE FOU
                   <PopoverTrigger>
