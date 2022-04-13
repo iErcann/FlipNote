@@ -23,9 +23,15 @@ interface VertexInfo {
     posOffset: PointInfo;
 
 }
+interface LayerPage {
+    index: number;
+    isHidden: boolean = false;
+
+}
 interface SketchPage {
     page: number;
     contentLines: Array<LineInfo>;
+    //contentVertices: Map<LayerPage, Array<VertexInfo>>;
     contentVertices: Array<VertexInfo>;
 
 }

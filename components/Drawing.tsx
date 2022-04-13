@@ -187,10 +187,17 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
         endCurrentVertex();
         setNewPage(true);
     }
+    let scaleV = 1;
     const draw = (p5: p5Types) => {
         if (!pages[page]) return;
-
-        if (newPage) {
+        scaleV += 0.01;
+        /* Translate around
+        const mx = p5.mouseX;
+        const my = p5.mouseY;
+        newPage = true;
+        p5.translate(-mx+width/2, -my+height/2);
+ */
+        if (newPage) {  
             endCurrentVertex();
             /*       for (const selectedVertex of selectedVertices.current) {
                       selectedVertex.isSelected = false;
@@ -235,7 +242,7 @@ function P5JsComponent({ page, pages, drawingSettings }: { page: number, pages: 
                     brushSize: brushSize, brushColor: brushColor,
                 }
             };
-            strokeApply(p5, line.styling);
+            strokeApply(p5, line.styling, 1 );
             drawLine(p5, line);
             currentVertexPath.styling = line.styling;
             currentVertexPath.content.push({
